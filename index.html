@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RupeeTrack — Daily Money Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="ri-money-rupee-circle-fill"></i></div>
+      <span class="logo-text">Rupee<strong>Track</strong></span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <i class="ri-dashboard-3-line"></i><span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="add-credit">
+        <i class="ri-add-circle-line"></i><span>Add Credit</span>
+      </a>
+      <a href="#" class="nav-item" data-page="add-debit">
+        <i class="ri-indeterminate-circle-line"></i><span>Add Debit</span>
+      </a>
+      <a href="#" class="nav-item" data-page="scanner">
+        <i class="ri-scan-2-line"></i><span>Bill Scanner</span>
+      </a>
+      <a href="#" class="nav-item" data-page="history">
+        <i class="ri-history-line"></i><span>History</span>
+      </a>
+      <a href="#" class="nav-item" data-page="report">
+        <i class="ri-bar-chart-grouped-line"></i><span>Monthly Report</span>
+      </a>
+      <a href="#" class="nav-item nav-item-medical" data-page="medical">
+        <i class="ri-hospital-line"></i><span>Medical Bills</span>
+        <span class="nav-badge">New</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-export" id="exportBtn">
+        <i class="ri-file-excel-2-line"></i> Export to Excel
+      </button>
+    </div>
+  </aside>
+
+  <!-- MOBILE TOPBAR -->
+  <header class="topbar">
+    <button class="hamburger" id="hamburger"><i class="ri-menu-3-line"></i></button>
+    <span class="topbar-title">RupeeTrack</span>
+    <button class="btn-export-sm" id="exportBtnSm"><i class="ri-file-excel-2-line"></i></button>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-sub" id="todayDate"></p>
+        </div>
+        <div class="header-badge">
+          <span class="hb-label">Net Balance</span>
+          <span class="hb-amount" id="headerBalance">₹0.00</span>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <div class="card card-credit">
+          <div class="card-icon"><i class="ri-arrow-down-circle-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Total Credits</span>
+            <span class="card-value" id="totalCredits">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-debit">
+          <div class="card-icon"><i class="ri-arrow-up-circle-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Total Debits</span>
+            <span class="card-value" id="totalDebits">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-balance">
+          <div class="card-icon"><i class="ri-wallet-3-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Net Balance</span>
+            <span class="card-value" id="netBalance">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-txn">
+          <div class="card-icon"><i class="ri-exchange-funds-line"></i></div>
+          <div class="card-info">
+            <span class="card-label">Transactions</span>
+            <span class="card-value" id="txnCount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="ri-pie-chart-2-line"></i> Spending by Category</h3>
+          <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="ri-line-chart-line"></i> Daily Flow (This Month)</h3>
+          <div class="chart-wrap"><canvas id="dailyChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>Recent Transactions</h3>
+          <a href="#" class="link-btn" data-page="history">View All <i class="ri-arrow-right-line"></i></a>
+        </div>
+        <div class="txn-list" id="recentTxnList">
+          <div class="empty-state"><i class="ri-inbox-2-line"></i><p>No transactions yet. Add a credit or debit to get started!</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ADD CREDIT ══ -->
+    <div class="page" id="page-add-credit">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Add Credit</h1>
+          <p class="page-sub">Record money coming in</p>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"><i class="ri-money-rupee-circle-line"></i> Amount (₹)</label>
+            <input type="number" class="form-input" id="creditAmount" placeholder="0.00" min="0" step="0.01"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="ri-calendar-line"></i> Date</label>
+            <input type="date" class="form-input" id="creditDate"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="ri-file-text-line"></i> Description</label>
+          <input type="text" class="form-input" id="creditDesc" placeholder="e.g. Salary, Freelance payment, Gift"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="ri-price-tag-3-line"></i> Category</label>
+          <div class="tag-select" id="creditCatTags">
+            <button class="tag active" data-val="Income">Income</button>
+            <button class="tag" data-val="Freelance">Freelance</button>
+            <button class="tag" data-val="Gift">Gift</button>
+            <button class="tag" data-val="Other">Other</button>
+          </div>
+          <input type="hidden" id="creditCategory" value="Income"/>
+        </div>
+        <button class="btn btn-success" id="saveCreditBtn">
+          <i class="ri-check-double-line"></i> Save Credit Entry
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ ADD DEBIT ══ -->
+    <div class="page" id="page-add-debit">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Add Debit</h1>
+          <p class="page-sub">Record money going out</p>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"><i class="ri-money-rupee-circle-line"></i> Amount (₹)</label>
+            <input type="number" class="form-input" id="debitAmount" placeholder="0.00" min="0" step="0.01"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="ri-calendar-line"></i> Date</label>
+            <input type="date" class="form-input" id="debitDate"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="ri-file-text-line"></i> Description</label>
+          <input type="text" class="form-input" id="debitDesc" placeholder="e.g. Groceries, Rent, Fuel"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="ri-price-tag-3-line"></i> Category</label>
+          <div class="tag-select" id="debitCatTags">
+            <button class="tag active" data-val="Food">Food</button>
+            <button class="tag" data-val="Transport">Transport</button>
+            <button class="tag" data-val="Shopping">Shopping</button>
+            <button class="tag" data-val="Utilities">Utilities</button>
+            <button class="tag" data-val="Other">Other</button>
+          </div>
+          <input type="hidden" id="debitCategory" value="Food"/>
+        </div>
+        <button class="btn btn-danger" id="saveDebitBtn">
+          <i class="ri-check-double-line"></i> Save Debit Entry
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ BILL SCANNER ══ -->
+    <div class="page" id="page-scanner">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Bill Scanner</h1>
+          <p class="page-sub">AI-powered — extracts grand total from your bill image</p>
+        </div>
+      </div>
+
+      <div class="form-card api-card" id="apiCard">
+        <div class="api-icon"><i class="ri-key-2-line"></i></div>
+        <h3>Anthropic API Key</h3>
+        <p class="api-note">Your key is saved only in your browser's localStorage. It never leaves your device.</p>
+        <div class="form-group" style="flex-direction:row;gap:.75rem;align-items:center">
+          <input type="password" class="form-input" id="apiKeyInput" placeholder="sk-ant-api03-..."/>
+          <button class="btn btn-primary" id="saveApiKey" style="white-space:nowrap"><i class="ri-shield-check-line"></i> Save</button>
+        </div>
+        <p class="api-saved" id="apiSavedMsg" style="display:none"><i class="ri-checkbox-circle-fill"></i> API Key saved securely in browser!</p>
+      </div>
+
+      <div class="form-card">
+        <div class="upload-zone" id="uploadZone">
+          <i class="ri-upload-cloud-2-line"></i>
+          <p>Drop your bill image here or <strong>click to upload</strong></p>
+          <span class="upload-hint">Supports JPG, PNG, WEBP</span>
+          <input type="file" id="billFile" accept="image/jpeg,image/png,image/webp" style="display:none"/>
+        </div>
+
+        <div class="bill-preview-wrap" id="billPreviewWrap" style="display:none">
+          <img id="billImg" src="" alt="Bill Preview"/>
+          <button class="remove-img-btn" id="removeImg"><i class="ri-close-line"></i></button>
+        </div>
+
+        <button class="btn btn-primary scan-btn" id="scanBtn" style="display:none">
+          <i class="ri-scan-2-line"></i> Scan &amp; Extract Total
+        </button>
+
+        <div class="scan-loader" id="scanLoader" style="display:none">
+          <div class="loader-ring"></div>
+          <span>Scanning bill with AI...</span>
+        </div>
+
+        <div class="scan-result" id="scanResult" style="display:none">
+          <div class="scan-result-top">
+            <span class="scan-label">Detected Grand Total</span>
+            <span class="scan-total" id="scannedTotal">₹0.00</span>
+          </div>
+          <div class="form-row" style="margin-top:1.25rem">
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-input" id="scanDesc" placeholder="e.g. Grocery bill"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-input" id="scanDate"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <div class="tag-select" id="scanCatTags">
+              <button class="tag active" data-val="Food">Food</button>
+              <button class="tag" data-val="Transport">Transport</button>
+              <button class="tag" data-val="Shopping">Shopping</button>
+              <button class="tag" data-val="Utilities">Utilities</button>
+              <button class="tag" data-val="Other">Other</button>
+            </div>
+            <input type="hidden" id="scanCategory" value="Food"/>
+          </div>
+          <button class="btn btn-danger" id="addScannedDebit">
+            <i class="ri-add-line"></i> Add as Debit Entry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ HISTORY ══ -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Transaction History</h1>
+          <p class="page-sub">All your recorded transactions</p>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <select class="form-input form-select filter-select" id="filterType">
+          <option value="all">All Types</option>
+          <option value="credit">Credits Only</option>
+          <option value="debit">Debits Only</option>
+        </select>
+        <select class="form-input form-select filter-select" id="filterCategory">
+          <option value="all">All Categories</option>
+          <option value="Food">Food</option>
+          <option value="Transport">Transport</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Utilities">Utilities</option>
+          <option value="Income">Income</option>
+          <option value="Freelance">Freelance</option>
+          <option value="Gift">Gift</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="month" class="form-input filter-select" id="filterMonth"/>
+      </div>
+      <div class="section-card">
+        <div class="txn-list" id="fullTxnList">
+          <div class="empty-state"><i class="ri-inbox-2-line"></i><p>No transactions yet</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MONTHLY REPORT ══ -->
+    <div class="page" id="page-report">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Monthly Report</h1>
+          <p class="page-sub">Your financial overview by month</p>
+        </div>
+        <select class="form-input form-select filter-select" id="reportMonth"></select>
+      </div>
+
+      <div class="cards-grid">
+        <div class="card card-credit">
+          <div class="card-icon"><i class="ri-arrow-down-circle-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Month Credits</span>
+            <span class="card-value" id="rptCredits">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-debit">
+          <div class="card-icon"><i class="ri-arrow-up-circle-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Month Debits</span>
+            <span class="card-value" id="rptDebits">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-balance">
+          <div class="card-icon"><i class="ri-wallet-3-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Net Savings</span>
+            <span class="card-value" id="rptBalance">₹0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="ri-pie-chart-2-line"></i> Category Breakdown</h3>
+          <div class="chart-wrap"><canvas id="rptCategoryChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="ri-bar-chart-line"></i> Daily Spending</h3>
+          <div class="chart-wrap"><canvas id="rptDailyChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header"><h3>All Transactions This Month</h3></div>
+        <div class="txn-list" id="reportTxnList">
+          <div class="empty-state"><i class="ri-inbox-2-line"></i><p>No transactions for this month</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MEDICAL BILLS ══ -->
+    <div class="page" id="page-medical">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Medical Bills</h1>
+          <p class="page-sub">Track all your hospital & medical expenses separately</p>
+        </div>
+        <button class="btn btn-medical" id="openMedicalForm">
+          <i class="ri-add-line"></i> Add Bill
+        </button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="cards-grid">
+        <div class="card card-medical-total">
+          <div class="card-icon"><i class="ri-hospital-fill"></i></div>
+          <div class="card-info">
+            <span class="card-label">Total Spent</span>
+            <span class="card-value" id="medTotalSpent">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-medical-count">
+          <div class="card-icon"><i class="ri-file-list-3-line"></i></div>
+          <div class="card-info">
+            <span class="card-label">Total Bills</span>
+            <span class="card-value" id="medBillCount">0</span>
+          </div>
+        </div>
+        <div class="card card-medical-month">
+          <div class="card-icon"><i class="ri-calendar-check-line"></i></div>
+          <div class="card-info">
+            <span class="card-label">This Month</span>
+            <span class="card-value" id="medThisMonth">₹0.00</span>
+          </div>
+        </div>
+        <div class="card card-medical-top">
+          <div class="card-icon"><i class="ri-map-pin-2-line"></i></div>
+          <div class="card-info">
+            <span class="card-label">Top Hospital</span>
+            <span class="card-value med-top-val" id="medTopHospital">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="ri-pie-chart-2-line"></i> Bills by Type</h3>
+          <div class="chart-wrap"><canvas id="medCatChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title"><i class="ri-bar-chart-line"></i> Monthly Medical Spend</h3>
+          <div class="chart-wrap"><canvas id="medMonthChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Filter + List -->
+      <div class="filter-bar">
+        <select class="form-input form-select filter-select" id="medFilterType">
+          <option value="all">All Types</option>
+          <option value="Consultation">Consultation</option>
+          <option value="Surgery">Surgery</option>
+          <option value="Pharmacy">Pharmacy</option>
+          <option value="Lab Test">Lab Test</option>
+          <option value="Emergency">Emergency</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="month" class="form-input filter-select" id="medFilterMonth" placeholder="Filter by month"/>
+        <input type="text" class="form-input filter-select" id="medFilterHospital" placeholder="Search hospital..."/>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>All Medical Bills</h3>
+          <button class="btn-export med-export-btn" id="medExportBtn">
+            <i class="ri-file-excel-2-line"></i> Export
+          </button>
+        </div>
+        <div class="txn-list" id="medBillList">
+          <div class="empty-state">
+            <i class="ri-hospital-line"></i>
+            <p>No medical bills added yet. Click "Add Bill" to get started.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MEDICAL BILL MODAL ══ -->
+    <div class="modal-overlay" id="medModalOverlay">
+      <div class="modal" id="medModal">
+        <div class="modal-header">
+          <h3><i class="ri-hospital-line"></i> Add Medical Bill</h3>
+          <button class="modal-close" id="closeMedModal"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label"><i class="ri-money-rupee-circle-line"></i> Amount Paid (₹)</label>
+              <input type="number" class="form-input" id="medAmount" placeholder="0.00" min="0" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label"><i class="ri-calendar-line"></i> Bill Date</label>
+              <input type="date" class="form-input" id="medDate"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="ri-hospital-line"></i> Hospital Name</label>
+            <input type="text" class="form-input" id="medHospital" placeholder="e.g. Apollo Hospital, AIIMS"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="ri-map-pin-line"></i> Hospital Location</label>
+            <input type="text" class="form-input" id="medLocation" placeholder="e.g. Hyderabad, Telangana"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="ri-price-tag-3-line"></i> Bill Type</label>
+            <div class="tag-select" id="medTypeTags">
+              <button class="tag active" data-val="Consultation">Consultation</button>
+              <button class="tag" data-val="Surgery">Surgery</button>
+              <button class="tag" data-val="Pharmacy">Pharmacy</button>
+              <button class="tag" data-val="Lab Test">Lab Test</button>
+              <button class="tag" data-val="Emergency">Emergency</button>
+              <button class="tag" data-val="Other">Other</button>
+            </div>
+            <input type="hidden" id="medBillType" value="Consultation"/>
+          </div>
+          <button class="btn btn-medical-save" id="saveMedBillBtn">
+            <i class="ri-check-double-line"></i> Save Medical Bill
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
