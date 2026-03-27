@@ -891,3 +891,20 @@ body {
 .modal-close:hover { background: var(--surface-2); color: var(--text); }
 
 .modal-body { padding: 1.5rem; }
+
+/* ── SYNC STATUS ── */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: .75rem;
+  padding: .4rem .5rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.sync-status i { font-size: .9rem; }
+.spin { animation: spin .8s linear infinite; }
