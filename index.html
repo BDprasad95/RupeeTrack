@@ -11,6 +11,17 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="style.css"/>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#7C3AED"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="RupeeTrack"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
 </head>
 <body>
 
@@ -46,6 +57,9 @@
     </nav>
     <div class="sidebar-footer">
       <div class="sync-status" id="syncStatus"><i class="ri-loader-4-line"></i> Connecting...</div>
+      <button class="btn-install" id="installBtn" style="display:none">
+        <i class="ri-download-2-line"></i> Install App
+      </button>
       <button class="btn-export" id="exportBtn">
         <i class="ri-file-excel-2-line"></i> Export to Excel
       </button>
@@ -508,5 +522,53 @@
   <div class="toast" id="toast"></div>
 
   <script type="module" src="app.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/rupeetrack/sw.js', { scope: '/rupeetrack/' })
+          .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+          .catch(err => console.warn('[PWA] Service Worker failed:', err));
+      });
+    }
+
+    // PWA Install Prompt
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBtn) {
+        installBtn.style.display = 'flex';
+        installBtn.addEventListener('click', async () => {
+          installBtn.style.display = 'none';
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log('[PWA] Install outcome:', outcome);
+          deferredPrompt = null;
+        });
+      }
+    });
+
+    // Hide install button after install
+    window.addEventListener('appinstalled', () => {
+      if (installBtn) installBtn.style.display = 'none';
+      deferredPrompt = null;
+      console.log('[PWA] App installed!');
+    });
+
+    // Handle shortcut URLs
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page');
+    if (page) window.addEventListener('DOMContentLoaded', () => {
+      const fn = setInterval(() => {
+        const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+        if (navItem) { navItem.click(); clearInterval(fn); }
+      }, 100);
+    });
+  </script>
 </body>
 </html>

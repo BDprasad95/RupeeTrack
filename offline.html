@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RupeeTrack — Offline</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0A0F1E;
+      color: #F9FAFB;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    .icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #7C3AED, #06B6D4);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 1.5rem;
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: .75rem;
+      background: linear-gradient(90deg, #9f67ff, #06B6D4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      color: #9CA3AF;
+      font-size: .95rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 2rem;
+      background: linear-gradient(135deg, #7C3AED, #6d28d9);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .note {
+      margin-top: 1.5rem;
+      font-size: .8rem;
+      color: #4B5563;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">₹</div>
+    <h1>You're Offline</h1>
+    <p>RupeeTrack needs an internet connection to sync your data with Firebase. Please check your connection and try again.</p>
+    <a href="/rupeetrack/" class="btn">↺ Try Again</a>
+    <p class="note">Your previously loaded data may still be visible from cache.</p>
+  </div>
+</body>
+</html>

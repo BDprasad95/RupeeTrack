@@ -1,0 +1,86 @@
+{
+  "name": "RupeeTrack — Daily Money Manager",
+  "short_name": "RupeeTrack",
+  "description": "Personal daily money manager with bill scanner and medical bills tracker",
+  "start_url": "/rupeetrack/",
+  "scope": "/rupeetrack/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0A0F1E",
+  "theme_color": "#7C3AED",
+  "lang": "en-IN",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Credit",
+      "short_name": "Credit",
+      "description": "Quickly add a credit entry",
+      "url": "/rupeetrack/?page=add-credit",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Add Debit",
+      "short_name": "Debit",
+      "description": "Quickly add a debit entry",
+      "url": "/rupeetrack/?page=add-debit",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ]
+}
