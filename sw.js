@@ -9,14 +9,14 @@ const OFFLINE_URL   = '/rupeetrack/offline.html';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
-  '/rupeetrack/',
-  '/rupeetrack/index.html',
-  '/rupeetrack/style.css',
-  '/rupeetrack/app.js',
-  '/rupeetrack/manifest.json',
-  '/rupeetrack/offline.html',
-  '/rupeetrack/icons/icon-192.png',
-  '/rupeetrack/icons/icon-512.png',
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  './offline.html',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   // External CDN assets
   'https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap',
   'https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css',
