@@ -528,7 +528,7 @@
     // Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/rupeetrack/sw.js', { scope: '/rupeetrack/' })
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
           .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
           .catch(err => console.warn('[PWA] Service Worker failed:', err));
       });
