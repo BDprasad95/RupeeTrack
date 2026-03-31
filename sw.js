@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════ */
 
 const CACHE_NAME    = 'rupeetrack-v1';
-const OFFLINE_URL   = '/rupeetrack/offline.html';
+const OFFLINE_URL   = './offline.html';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
