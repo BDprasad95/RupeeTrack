@@ -7,6 +7,7 @@
 // ── FIREBASE CONFIG ────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyC7CU5-NiYRtGJu_q9sYMSvlTicvC8LHiY",
@@ -20,6 +21,95 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db          = getDatabase(firebaseApp);
+const auth        = getAuth(firebaseApp);
+const provider    = new GoogleAuthProvider();
+
+// ── ALLOWED EMAIL (only this account can login) ─
+const ALLOWED_EMAIL = 'bprasad.dp@gmail.com';
+
+// ── AUTH STATE ─────────────────────────────────
+onAuthStateChanged(auth, user => {
+  if (user) {
+    if (user.email !== ALLOWED_EMAIL) {
+      // Wrong account — show access denied
+      document.getElementById('loginScreen').style.display  = 'none';
+      document.getElementById('appWrapper').style.display   = 'none';
+      document.getElementById('deniedScreen').style.display = 'flex';
+      document.getElementById('deniedEmail').textContent    = `Signed in as: ${user.email}`;
+      return;
+    }
+    // Authorized — show app
+    document.getElementById('loginScreen').style.display  = 'none';
+    document.getElementById('deniedScreen').style.display = 'none';
+    document.getElementById('appWrapper').style.display   = 'block';
+
+    // Set user profile in sidebar
+    document.getElementById('userName').textContent  = user.displayName || 'User';
+    document.getElementById('userEmail').textContent = user.email;
+    if (user.photoURL) {
+      document.getElementById('userAvatar').src = user.photoURL;
+    } else {
+      document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=7C3AED&color=fff`;
+    }
+
+    // Start Firebase listeners with user UID
+    startFirebaseListeners(user.uid);
+
+  } else {
+    // Not logged in — show login screen
+    document.getElementById('loginScreen').style.display  = 'flex';
+    document.getElementById('appWrapper').style.display   = 'none';
+    document.getElementById('deniedScreen').style.display = 'none';
+  }
+});
+
+// ── GOOGLE LOGIN ───────────────────────────────
+document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('googleLoginBtn');
+  btn.innerHTML = '<i class="ri-loader-4-line"></i> Signing in...';
+  btn.disabled  = true;
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84z"/></svg> Sign in with Google';
+    btn.disabled = false;
+    const errEl  = document.getElementById('loginError');
+    const errMsg = document.getElementById('loginErrorMsg');
+    errMsg.textContent    = err.message || 'Sign in failed. Please try again.';
+    errEl.style.display   = 'flex';
+  }
+});
+
+// ── LOGOUT ─────────────────────────────────────
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (confirm('Are you sure you want to sign out?')) {
+    await signOut(auth);
+    toast('Signed out successfully', 'info');
+  }
+});
+
+document.getElementById('signOutDeniedBtn').addEventListener('click', async () => {
+  await signOut(auth);
+});
+
+// ── FIREBASE LISTENERS (called after auth) ─────
+function startFirebaseListeners(uid) {
+  onValue(ref(db, 'transactions'), snapshot => {
+    const data   = snapshot.val();
+    transactions = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
+    renderDashboard();
+    renderHistory();
+    renderReport();
+    setSyncStatus('synced');
+  }, () => setSyncStatus('offline'));
+
+  onValue(ref(db, 'medicalBills'), snapshot => {
+    const data   = snapshot.val();
+    medicalBills = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
+    renderMedical();
+    setSyncStatus('synced');
+  }, () => setSyncStatus('offline'));
+}
 
 // ── STATE ──────────────────────────────────────
 let transactions  = [];
@@ -76,24 +166,7 @@ function setSyncStatus(status) {
   el.style.color = s.color;
 }
 
-// ── FIREBASE LISTENERS (live sync) ────────────
-onValue(ref(db, 'transactions'), snapshot => {
-  const data   = snapshot.val();
-  transactions = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
-  renderDashboard();
-  renderHistory();
-  renderReport();
-  setSyncStatus('synced');
-}, () => setSyncStatus('offline'));
-
-onValue(ref(db, 'medicalBills'), snapshot => {
-  const data   = snapshot.val();
-  medicalBills = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
-  renderMedical();
-  setSyncStatus('synced');
-}, () => setSyncStatus('offline'));
-
-// ── FIREBASE WRITE ─────────────────────────────
+// ── NAVIGATION ─────────────────────────────────
 async function addTransaction(txn) {
   setSyncStatus('syncing');
   try {
@@ -572,5 +645,6 @@ document.getElementById('exportBtnSm').addEventListener('click', exportExcel);
 document.getElementById('medExportBtn').addEventListener('click', exportExcel);
 
 // ── INIT ────────────────────────────────────────
+// App initializes via onAuthStateChanged above
+// renderDashboard() is called after successful login
 setSyncStatus('syncing');
-renderDashboard();
