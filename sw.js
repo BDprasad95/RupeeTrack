@@ -4,7 +4,7 @@
    Strategy: Cache First for assets, Network First for Firebase
 ═══════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'rupeetrack-v1';
+const CACHE_NAME    = 'rupeetrack-v3';
 const OFFLINE_URL   = './offline.html';
 
 // Files to cache for offline use

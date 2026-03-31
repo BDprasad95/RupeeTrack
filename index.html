@@ -12,6 +12,42 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="style.css"/>
 
+  <!-- Critical inline CSS — ensures login screen always renders even if SW cache is stale -->
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#0A0F1E;color:#F9FAFB;min-height:100vh}
+    .login-screen{position:fixed;inset:0;background:#0A0F1E;display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem}
+    .login-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+    .login-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3}
+    .login-orb-1{width:500px;height:500px;background:#7C3AED;top:-150px;left:-150px}
+    .login-orb-2{width:400px;height:400px;background:#06B6D4;bottom:-100px;right:-100px}
+    .login-card{background:#111827;border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:440px;text-align:center;position:relative;z-index:1;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+    .login-logo-icon{width:72px;height:72px;background:linear-gradient(135deg,#7C3AED,#06B6D4);border-radius:18px;display:grid;place-items:center;font-size:2rem;color:white;margin:0 auto 1rem}
+    .login-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:#F9FAFB;margin-bottom:.4rem}
+    .login-title strong{color:#9f67ff}
+    .login-sub{font-size:.9rem;color:#9CA3AF;margin-bottom:2rem}
+    .login-divider{display:flex;align-items:center;gap:.75rem;margin:1.5rem 0;color:#4B5563;font-size:.8rem}
+    .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
+    .login-features{display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem;text-align:left}
+    .login-feature{display:flex;align-items:center;gap:.75rem;font-size:.85rem;color:#9CA3AF;padding:.6rem .85rem;background:#1a2235;border:1px solid rgba(255,255,255,.06);border-radius:10px}
+    .login-feature i{font-size:1.1rem;width:20px;text-align:center}
+    .login-feature i.green{color:#10B981}
+    .login-feature i.cyan{color:#06B6D4}
+    .login-feature i.violet{color:#9f67ff}
+    .btn-google-login{display:flex;align-items:center;justify-content:center;gap:.75rem;width:100%;padding:1rem 1.5rem;background:white;color:#1f1f1f;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+    .btn-google-login:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .btn-google-login:disabled{opacity:.7;cursor:not-allowed;transform:none}
+    .login-note{margin-top:1rem;font-size:.75rem;color:#4B5563;display:flex;align-items:center;justify-content:center;gap:.35rem}
+    .login-error{margin-top:1rem;background:rgba(239,68,68,.1);border:1px solid #EF4444;border-radius:8px;padding:.75rem 1rem;font-size:.825rem;color:#EF4444;display:flex;align-items:flex-start;gap:.5rem;text-align:left}
+    .denied-screen{position:fixed;inset:0;background:#0A0F1E;display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem}
+    .denied-card{background:#111827;border:1px solid rgba(239,68,68,.3);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:420px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+    .denied-icon{font-size:3.5rem;color:#EF4444;margin-bottom:1rem}
+    .denied-card h2{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:#EF4444;margin-bottom:.75rem}
+    .denied-card p{color:#9CA3AF;font-size:.875rem;margin-bottom:.5rem;line-height:1.6}
+    .denied-email{font-size:.8rem;color:#4B5563;margin-bottom:1.5rem!important;font-style:italic}
+    .app-wrapper{display:flex;min-height:100vh;width:100%}
+  </style>
+
   <!-- PWA -->
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#7C3AED"/>
@@ -33,23 +69,28 @@
     </div>
     <div class="login-card">
       <div class="login-logo">
-        <div class="login-logo-icon"><i class="ri-money-rupee-circle-fill"></i></div>
+        <div class="login-logo-icon">₹</div>
         <h1 class="login-title">Rupee<strong>Track</strong></h1>
         <p class="login-sub">Your personal daily money manager</p>
       </div>
       <div class="login-features">
-        <div class="login-feature"><i class="ri-shield-check-line"></i> Private & Secure</div>
-        <div class="login-feature"><i class="ri-cloud-line"></i> Syncs Everywhere</div>
-        <div class="login-feature"><i class="ri-smartphone-line"></i> Works on All Devices</div>
+        <div class="login-feature"><i class="ri-shield-check-line green"></i> Private &amp; Secure — only you can access</div>
+        <div class="login-feature"><i class="ri-cloud-line cyan"></i> Syncs across all your devices instantly</div>
+        <div class="login-feature"><i class="ri-smartphone-line violet"></i> Works on mobile, tablet &amp; desktop</div>
       </div>
+      <div class="login-divider">Sign in to continue</div>
       <button class="btn-google-login" id="googleLoginBtn">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
         Sign in with Google
       </button>
-      <p class="login-note"><i class="ri-lock-line"></i> Only authorized accounts can access this app</p>
+      <p class="login-note">🔒 Only authorized accounts can access this app</p>
       <div class="login-error" id="loginError" style="display:none">
-        <i class="ri-error-warning-line"></i>
-        <span id="loginErrorMsg">Access denied</span>
+        ⚠️ <span id="loginErrorMsg">Sign in failed. Please try again.</span>
       </div>
     </div>
   </div>
@@ -57,12 +98,18 @@
   <!-- ══ ACCESS DENIED SCREEN ══ -->
   <div class="denied-screen" id="deniedScreen" style="display:none">
     <div class="denied-card">
-      <div class="denied-icon"><i class="ri-shield-cross-line"></i></div>
+      <div class="denied-icon">🚫</div>
       <h2>Access Denied</h2>
-      <p>This app is private and only accessible to authorized accounts.</p>
+      <p>This app is private and only accessible to the authorized account.</p>
       <p class="denied-email" id="deniedEmail"></p>
       <button class="btn-google-login" id="signOutDeniedBtn">
-        <i class="ri-logout-box-line"></i> Sign out & Try Another Account
+        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Sign out &amp; Try Another Account
       </button>
     </div>
   </div>
