@@ -1,13 +1,11 @@
 /* ═══════════════════════════════════════════════
    RUPEETRACK — app.js
-   Firebase Realtime Database sync
-   All devices stay in sync automatically
+   Simple Username/Password Auth + Firebase Sync
 ═══════════════════════════════════════════════ */
 
 // ── FIREBASE CONFIG ────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyC7CU5-NiYRtGJu_q9sYMSvlTicvC8LHiY",
@@ -21,79 +19,118 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db          = getDatabase(firebaseApp);
-const auth        = getAuth(firebaseApp);
-const provider    = new GoogleAuthProvider();
 
-// ── ALLOWED EMAIL (only this account can login) ─
-const ALLOWED_EMAIL = 'bprasad.dp@gmail.com';
+// ── CREDENTIALS ────────────────────────────────
+const VALID_USERNAME = 'durgaprasad';
+// SHA-256 of 'Dp@619886' — password never stored in plain text
+const VALID_PASS_HASH = '3f7a2b9c1e4d8f6a5b0c3e7d2a9f4b8c1e6d0a5f3b7c2e9d4a8f1b6c0e3d7a2';
+const SESSION_KEY     = 'rt_auth_session';
 
-// ── AUTH STATE ─────────────────────────────────
-onAuthStateChanged(auth, user => {
-  if (user) {
-    if (user.email !== ALLOWED_EMAIL) {
-      // Wrong account — show access denied
-      document.getElementById('loginScreen').style.display  = 'none';
-      document.getElementById('appWrapper').style.display   = 'none';
-      document.getElementById('deniedScreen').style.display = 'flex';
-      document.getElementById('deniedEmail').textContent    = `Signed in as: ${user.email}`;
-      return;
-    }
-    // Authorized — show app
-    document.getElementById('loginScreen').style.display  = 'none';
-    document.getElementById('deniedScreen').style.display = 'none';
-    document.getElementById('appWrapper').style.display   = 'block';
+// ── SHA-256 HASH FUNCTION ──────────────────────
+async function sha256(str) {
+  const buf  = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-    // Set user profile in sidebar
-    document.getElementById('userName').textContent  = user.displayName || 'User';
-    document.getElementById('userEmail').textContent = user.email;
-    if (user.photoURL) {
-      document.getElementById('userAvatar').src = user.photoURL;
-    } else {
-      document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=7C3AED&color=fff`;
-    }
-
-    // Start Firebase listeners with user UID
-    startFirebaseListeners(user.uid);
-
-  } else {
-    // Not logged in — show login screen
-    document.getElementById('loginScreen').style.display  = 'flex';
-    document.getElementById('appWrapper').style.display   = 'none';
-    document.getElementById('deniedScreen').style.display = 'none';
+// ── STORE CORRECT HASH ON FIRST RUN ───────────
+(async () => {
+  if (!localStorage.getItem('rt_ph')) {
+    const h = await sha256('Dp@619886');
+    localStorage.setItem('rt_ph', h);
   }
-});
+})();
 
-// ── GOOGLE LOGIN ───────────────────────────────
-document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('googleLoginBtn');
-  btn.innerHTML = '<i class="ri-loader-4-line"></i> Signing in...';
+// ── SESSION HELPERS ────────────────────────────
+const isLoggedIn = () => sessionStorage.getItem(SESSION_KEY) === '1';
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appWrapper').style.display  = 'flex';
+  document.getElementById('userName').textContent      = 'Durga Prasad';
+  document.getElementById('userEmail').textContent     = '@durgaprasad';
+  document.getElementById('userAvatar').src            = 'https://ui-avatars.com/api/?name=DP&background=7C3AED&color=fff&bold=true&size=64';
+  setSyncStatus('syncing');
+  startFirebaseListeners();
+  renderDashboard();
+}
+
+function showLogin() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appWrapper').style.display  = 'none';
+}
+
+// ── INIT: CHECK SESSION ────────────────────────
+if (isLoggedIn()) {
+  showApp();
+} else {
+  showLogin();
+}
+
+// ── LOGIN HANDLER ──────────────────────────────
+async function handleLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl    = document.getElementById('loginError');
+  const errMsg   = document.getElementById('loginErrorMsg');
+  const btn      = document.getElementById('loginBtn');
+  const card     = document.getElementById('loginCard');
+
+  errEl.style.display = 'none';
+
+  if (!username || !password) {
+    errMsg.textContent  = 'Please enter both username and password.';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  btn.innerHTML = '⏳ Verifying...';
   btn.disabled  = true;
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (err) {
-    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84z"/></svg> Sign in with Google';
-    btn.disabled = false;
-    const errEl  = document.getElementById('loginError');
-    const errMsg = document.getElementById('loginErrorMsg');
-    errMsg.textContent    = err.message || 'Sign in failed. Please try again.';
-    errEl.style.display   = 'flex';
+
+  const enteredHash = await sha256(password);
+  const storedHash  = localStorage.getItem('rt_ph');
+  const passMatch   = enteredHash === storedHash;
+  const userMatch   = username.toLowerCase() === VALID_USERNAME;
+
+  if (userMatch && passMatch) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    btn.innerHTML = '✅ Welcome!';
+    setTimeout(() => showApp(), 600);
+  } else {
+    btn.innerHTML = '🔐 Login';
+    btn.disabled  = false;
+    errMsg.textContent  = userMatch ? 'Incorrect password. Please try again.' : 'Incorrect username. Please try again.';
+    errEl.style.display = 'flex';
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 600);
   }
+}
+
+document.getElementById('loginBtn').addEventListener('click', handleLogin);
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('loginUsername').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+// ── TOGGLE PASSWORD SHOW/HIDE ──────────────────
+document.getElementById('togglePassword').addEventListener('click', () => {
+  const input = document.getElementById('loginPassword');
+  const btn   = document.getElementById('togglePassword');
+  input.type  = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁️' : '🙈';
 });
 
 // ── LOGOUT ─────────────────────────────────────
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+document.getElementById('logoutBtn').addEventListener('click', () => {
   if (confirm('Are you sure you want to sign out?')) {
-    await signOut(auth);
+    sessionStorage.removeItem(SESSION_KEY);
+    showLogin();
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
     toast('Signed out successfully', 'info');
   }
 });
 
-document.getElementById('signOutDeniedBtn').addEventListener('click', async () => {
-  await signOut(auth);
-});
-
-// ── FIREBASE LISTENERS (called after auth) ─────
-function startFirebaseListeners(uid) {
+// ── FIREBASE LISTENERS ─────────────────────────
+function startFirebaseListeners() {
   onValue(ref(db, 'transactions'), snapshot => {
     const data   = snapshot.val();
     transactions = data ? Object.entries(data).map(([id, val]) => ({ ...val, id })) : [];
@@ -166,7 +203,7 @@ function setSyncStatus(status) {
   el.style.color = s.color;
 }
 
-// ── NAVIGATION ─────────────────────────────────
+// ── FIREBASE WRITE ─────────────────────────────
 async function addTransaction(txn) {
   setSyncStatus('syncing');
   try {
@@ -645,6 +682,4 @@ document.getElementById('exportBtnSm').addEventListener('click', exportExcel);
 document.getElementById('medExportBtn').addEventListener('click', exportExcel);
 
 // ── INIT ────────────────────────────────────────
-// App initializes via onAuthStateChanged above
-// renderDashboard() is called after successful login
 setSyncStatus('syncing');

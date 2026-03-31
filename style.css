@@ -1163,3 +1163,70 @@ body {
 
 /* ── APP WRAPPER ── */
 .app-wrapper { display: flex; min-height: 100vh; width: 100%; }
+
+/* ── USERNAME/PASSWORD LOGIN FORM ── */
+.login-label {
+  display: block;
+  font-size: .8rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .5rem;
+}
+.login-input {
+  width: 100%;
+  background: #1a2235;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  color: #F9FAFB;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .95rem;
+  padding: .85rem 1rem;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.login-input:focus { border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,.2); }
+.login-input::placeholder { color: #4B5563; }
+.login-pass-wrap { position: relative; }
+.login-pass-wrap .login-input { padding-right: 3rem; }
+.toggle-pass {
+  position: absolute;
+  right: .75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: .25rem;
+  line-height: 1;
+}
+.btn-login {
+  width: 100%;
+  padding: .95rem;
+  background: linear-gradient(135deg, #7C3AED, #6d28d9);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 4px 20px rgba(124,58,237,.4);
+  margin-bottom: 1rem;
+  letter-spacing: .02em;
+}
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,.5); }
+.btn-login:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
+/* Shake animation for wrong password */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-10px); }
+  40%      { transform: translateX(10px); }
+  60%      { transform: translateX(-8px); }
+  80%      { transform: translateX(8px); }
+}
+.shake { animation: shake .5s ease; }
